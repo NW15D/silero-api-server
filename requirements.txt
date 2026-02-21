@@ -7,6 +7,6 @@ torchaudio
 uvicorn
 soundfile
 numpy
+scipy
 pydub
 requests
-torchvision

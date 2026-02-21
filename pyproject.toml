@@ -25,6 +25,7 @@ dependencies = [
   "uvicorn",
   "soundfile",
   "numpy",
+  "scipy",
   "pydub",
   "requests",
 ]
