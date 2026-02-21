@@ -15,8 +15,8 @@ class SileroTtsService:
     """
     Generate TTS wav files using Silero
     """
-    def __init__(self, sample_path, lang="v3_en.pt") -> None:
-        self.sample_text = "The fallowed fallen swindle auspacious goats in portable power stations."
+    def __init__(self, sample_path, lang="v5_ru.pt") -> None:
+        self.sample_text = "Удалена библиотека torchvision (так как для TTS она не требуется, а только скачивает лишние мегабайты)."
         self.sample_path = Path(sample_path)
         self.sessions_path = None
 
@@ -46,8 +46,8 @@ class SileroTtsService:
         if not self.sessions_path.exists():
             self.sessions_path.mkdir()
     
-    def load_model(self, lang_model="v3_en.pt"):
-        # Download the model. Default to en.
+    def load_model(self, lang_model="v5_ru.pt"):
+        # Download the model. Default to ru.
         if lang_model not in self.langs:
             raise Exception(f"{lang_model} not in {list(self.langs.values())}")
         
@@ -154,7 +154,7 @@ class SileroTtsService:
         response = requests.get(lang_base_url)
         langs = [lang.split('/')[0] for lang in response.text.split('<a href="')][1:]
 
-        # Enter each web directory and grab v3 model file links
+        # Enter each web directory and grab vX model file links
         for lang in langs:
             response = requests.get(f"{lang_base_url}/{lang}")
             if not response.ok:
