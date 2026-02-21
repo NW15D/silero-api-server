@@ -40,7 +40,7 @@ app.add_middleware(
 class Voice(BaseModel):
     speaker: str
     text: str
-    session: Optional[str]
+    session: Optional[str] = None
 
 class SampleText(BaseModel):
     text: Optional[str]
