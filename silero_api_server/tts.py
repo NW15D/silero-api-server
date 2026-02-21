@@ -20,8 +20,8 @@ class SileroTtsService:
         self.sample_path = Path(sample_path)
         self.sessions_path = None
 
-        # Silero works fine on CPU
-        self.device = torch.device('cpu')
+        # Silero works fine on CPU, but use CUDA if available
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         torch.set_num_threads(4)
         torchaudio.set_audio_backend("soundfile")
 
@@ -161,9 +161,9 @@ class SileroTtsService:
                 raise f"Failed to get languages: {response.status_code}"
             lang_files = [f.split('"')[0] for f in response.text.split('<a href="')][1:]
 
-            # If a valid v3 file, add to list
+            # If a valid v3/v4/v5 file, add to list
             for lang_file in lang_files:
-                if lang_file.startswith('v3'):
+                if lang_file.startswith(('v3', 'v4', 'v5')):
                     lang_urls[lang_file]=f"{lang_base_url}/{lang}/{lang_file}"
         with open('langs.json','w') as fh:
             json.dump(lang_urls,fh)
