@@ -5,7 +5,7 @@ from typing import Optional
 
 from wyoming.audio import AudioStart, AudioChunk, AudioStop
 from wyoming.event import Event
-from wyoming.info import Describe, Info, TtsVoice, TtsInfo, TtsVoiceFormat
+from wyoming.info import Describe, Info, TtsVoice, TtsProgram, Attribution
 from wyoming.server import AsyncServer, AsyncEventHandler
 from wyoming.tts import Synthesize
 
@@ -22,15 +22,17 @@ class SileroWyomingHandler(AsyncEventHandler):
     async def handle_event(self, event: Event) -> bool:
         if Describe.is_type(event.type):
             voices = []
+            attribution = Attribution(name="Silero", url="https://github.com/snakers4/silero-models")
             for speaker in self.tts_service.get_speakers():
                 voices.append(TtsVoice(
                     name=speaker,
                     description=f"Silero speaker {speaker}",
                     languages=["ru"],
-                    formats=[TtsVoiceFormat(name="wav", sample_rate=22050, channels=1)]
+                    attribution=attribution,
+                    installed=True
                 ))
             
-            info = Info(tts=[TtsInfo(voices=voices)])
+            info = Info(tts=[TtsProgram(voices=voices)])
             await self.write_event(info.event())
             return True
 
