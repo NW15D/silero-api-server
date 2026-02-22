@@ -30,6 +30,7 @@ dependencies = [
   "requests",
   "pymorphy3",
   "pymorphy3-dicts-ru",
+  "pymorphy3-dicts-uk",
   "wyoming",
   "transliterate",
 ]

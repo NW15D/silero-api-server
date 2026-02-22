@@ -67,10 +67,16 @@ class SileroTtsService:
         self.model.to(self.device)
 
     def generate(self, speaker, text, session=""):
-        # Apply Russian morphology preprocessing if requested and language is Russian
+        # Apply morphology and transliteration for Russian and Ukrainian
+        lang_code = None
         if "_ru" in self.current_lang:
-            logger.debug(f"Applying Russian morphology to: {text}")
-            text = apply_morphology(text)
+            lang_code = "ru"
+        elif "_ua" in self.current_lang or "_uk" in self.current_lang:
+            lang_code = "uk"
+            
+        if lang_code:
+            logger.debug(f"Applying morphology ({lang_code}) to: {text}")
+            text = apply_morphology(text, lang_code)
             logger.debug(f"Morphed text: {text}")
 
         if len(text) > self.max_char_length:

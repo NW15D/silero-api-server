@@ -4,7 +4,7 @@ from pymorphy3 import MorphAnalyzer
 from pymorphy3.analyzer import Parse
 from transliterate import translit
 
-NUMBERS = """0,ноль,нулевой
+NUMBERS_RU = """0,ноль,нулевой
 1,один,первый
 2,два,второй
 3,три,третий
@@ -44,30 +44,76 @@ NUMBERS = """0,ноль,нулевой
 1000,тысяча,тысячный
 1000000,миллион,миллионный"""
 
-class MorphNumber:
-    def __init__(self):
-        self.morph = MorphAnalyzer()
+NUMBERS_UK = """0,нуль,нульовий
+1,один,перший
+2,два,другий
+3,три,третій
+4,чотири,четвертий
+5,п'ять,п'ятий
+6,шість,шостий
+7,сім,сьомий
+8,вісім,восьмий
+9,дев'ять,дев'ятий
+10,десять,десятий
+11,одинадцять,одинадцятий
+12,дванадцять,дванадцятий
+13,тринадцять,тринадцятий
+14,чотирнадцять,чотирнадцятий
+15,п'ятнадцять,п'ятнадцятий
+16,шістнадцять,шістнадцятий
+17,сімнадцять,сімнадцятий
+18,вісімнадцять,вісімнадцятий
+19,дев'ятнадцять,дев'ятнадцятий
+20,двадцять,двадцятий
+30,тридцять,тридцятий
+40,сорок,сороковий
+50,п'ятдесят,п'ятдесятий
+60,шістдесят,шістдесятий
+70,сімдесят,сімдесятий
+80,вісімдесят,вісімдесятий
+90,дев'яносто,дев'яностий
+100,сто,сотий
+200,двісті,двохсотий
+300,триста,трьохсотий
+400,чотириста,чотирьохсотий
+500,п'ятсот,п'ятисотий
+600,шістсот,шестисотий
+700,сімсот,семисотий
+800,вісімсот,восьмисотий
+900,дев'ятсот,дев'ятисотий
+1000,тисяча,тисячний
+1000000,мільйон,мільйонний"""
 
-        # создаём словарь из чисел и порядковых числительных
+class MorphProcessor:
+    def __init__(self, lang: str = "ru"):
+        self.lang = lang
+        self.morph = MorphAnalyzer(lang=lang)
+        self.num_data = NUMBERS_RU if lang == "ru" else NUMBERS_UK
         self.dict = {}
-        for i in NUMBERS.split("\n"):
+        for i in self.num_data.split("\n"):
             x, card, ord_ = i.split(",")
             self.dict[int(x)] = card
             self.dict[card] = ord_
+        
+        # Gender mappings for feminine numbers (1 and 2)
+        # RU: 1 (один -> одна), 2 (два -> две)
+        # UK: 1 (один -> одна), 2 (два -> дві)
+        self.fem_map = {1: "одна", 2: "две"} if lang == "ru" else {1: "одна", 2: "дві"}
 
     def parse(self, word: str) -> Parse:
         words: List[Parse] = self.morph.parse(word)
-        for word in words:
-            if word.tag.case == "nomn":
-                return word
+        for w in words:
+            if w.tag.case == "nomn":
+                return w
         return words[0]
 
     def integer_to_words(self, integer: int, text: str = None) -> list[str]:
         if integer < 0:
-            return ["минус"] + self.integer_to_words(-integer, text)
+            minus = "мінус" if self.lang == "uk" else "минус"
+            return [minus] + self.integer_to_words(-integer, text)
 
         if integer == 0:
-            return ["ноль"]
+            return [self.dict[0]]
 
         if text:
             last_word = text.rsplit(" ", 1)[-1]
@@ -80,8 +126,8 @@ class MorphNumber:
         words = []
 
         k = len(str(integer)) - 1
-        for digit in str(integer):
-            digit = int(digit)
+        for digit_char in str(integer):
+            digit = int(digit_char)
 
             if k % 3 == 2:
                 if digit > 0:
@@ -98,22 +144,30 @@ class MorphNumber:
                     digit += 10
 
                 if digit > 0:
+                    # Thousands are feminine: одна тисяча, дві тисячі
                     if k == 3 and digit <= 2:
-                        w: Parse = self.parse(self.dict[digit])
-                        w = w.inflect({"femn"})
-                        words.append(w.word if w else self.dict[digit])
-
+                        words.append(self.fem_map[digit])
+                    # Agreement with noun gender: одна задача, дві задачі
                     elif k == 0 and digit <= 2 and tag:
-                        w: Parse = self.parse(self.dict[digit])
-                        w = w.inflect({tag.gender, tag.case})
-                        words.append(w.word if w else self.dict[digit])
+                        if tag.gender == "femn":
+                            words.append(self.fem_map[digit])
+                        elif tag.gender == "neut" and digit == 1:
+                            words.append("одно" if self.lang == "ru" else "одне")
+                        else:
+                            words.append(self.dict[digit])
                     else:
                         words.append(self.dict.get(digit, str(digit)))
 
-                if k > 2 and (hundred or ten or digit):
-                    w2: Parse = self.parse(self.dict.get(10**k, "тысяча" if k==3 else "миллион"))
-                    w2 = w2.make_agree_with_number(digit)
-                    words.append(w2.word if w2 else "тысяч")
+                if k > 2 and (hundred or ten or digit or (k > 3 and integer // (10**k) % 1000 > 0)):
+                    # Handle thousands, millions, etc.
+                    # This logic is simplified; for large numbers it might need more work
+                    base_val = 10**k
+                    if base_val in self.dict:
+                        w2: Parse = self.parse(self.dict[base_val])
+                        # make_agree_with_number doesn't always work perfectly for UK in pymorphy3, 
+                        # but it's the best we have.
+                        w2 = w2.make_agree_with_number(digit)
+                        words.append(w2.word if w2 else self.dict[base_val])
 
             k -= 1
 
@@ -134,27 +188,37 @@ class MorphNumber:
         return words
 
     def float_to_words(self, integer: int, decimal: int, decsize: int) -> list[str]:
-        words = self.integer_to_words(integer, "часть")
-        words += ["целая" if self.first(integer) else "целых"]
-        words += ["и"]
-        words += self.integer_to_words(decimal, "часть")
+        # RU: пять целых и две десятых
+        # UK: п'ять цілих і дві десятих
+        cel_word = "цілих" if self.lang == "uk" else "целых"
+        cel_one = "ціла" if self.lang == "uk" else "целая"
+        i_word = "і" if self.lang == "uk" else "и"
+        
+        words = self.integer_to_words(integer, "частина" if self.lang == "uk" else "часть")
+        words += [cel_one if self.first(integer) else cel_word]
+        words += [i_word]
+        words += self.integer_to_words(decimal, "частина" if self.lang == "uk" else "часть")
+        
         if decsize == 1:
-            words += ["десятая" if self.first(decimal) else "десятых"]
+            suffix = "десята" if self.first(decimal) else "десятих"
+            if self.lang == "ru": suffix = "десятая" if self.first(decimal) else "десятых"
+            words += [suffix]
         elif decsize == 2:
-            words += ["сотая" if self.first(decimal) else "сотых"]
+            suffix = "сота" if self.first(decimal) else "сотих"
+            if self.lang == "ru": suffix = "сотая" if self.first(decimal) else "сотых"
+            words += [suffix]
         elif decsize == 3:
-            words += ["тысячная" if self.first(decimal) else "тысячных"]
+            suffix = "тисячна" if self.first(decimal) else "тисячних"
+            if self.lang == "ru": suffix = "тысячная" if self.first(decimal) else "тысячных"
+            words += [suffix]
         return words
 
     def first(self, integer: int) -> bool:
         return (integer % 10 == 1) and (integer % 100 != 11)
 
     def preprocess_text(self, text: str) -> str:
-        """
-        Find patterns like '5 минут' or '22.5 градуса' and replace with morphed words.
-        """
-        # Find [float/int] [space] [Russian word]
-        pattern = re.compile(r'(\d+[.,]\d+|\d+)\s+([а-яА-ЯёЁ]+)')
+        # Find [float/int] [space] [Russian/Ukrainian word]
+        pattern = re.compile(r'(\d+[.,]\d+|\d+)\s+([а-яА-ЯёЁіІїЇєЄґҐ]+)')
         
         def replace_match(match):
             val_str = match.group(1).replace(",", ".")
@@ -166,8 +230,6 @@ class MorphNumber:
                 decimal = int(parts[1])
                 decsize = len(parts[1])
                 num_words = self.float_to_words(integer, decimal, decsize)
-                # After float, noun is usually in genitive singular (e.g. 1.1 градуса)
-                # but "words_after_number" with fixed 2 usually handles it well in Russian
                 morphed_noun = self.words_after_number(2, noun) 
             else:
                 number = int(val_str)
@@ -177,15 +239,16 @@ class MorphNumber:
             return " ".join(num_words + morphed_noun)
         
         text = pattern.sub(replace_match, text)
-
-        # Transliterate Latin to Cyrillic
-        # This helps Silero RU models read English words or names if they are written in Latin
-        text = translit(text, 'ru')
-        
+        text = translit(text, self.lang)
         return text
 
-# Global instance
-MORPH_PROCESSOR = MorphNumber()
+# Instances
+PROCESSORS = {
+    "ru": MorphProcessor("ru"),
+    "uk": MorphProcessor("uk")
+}
 
-def apply_morphology(text: str) -> str:
-    return MORPH_PROCESSOR.preprocess_text(text)
+def apply_morphology(text: str, lang_code: str = "ru") -> str:
+    lang = "uk" if lang_code in ["ua", "uk"] else "ru"
+    processor = PROCESSORS.get(lang, PROCESSORS["ru"])
+    return processor.preprocess_text(text)
