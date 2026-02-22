@@ -33,7 +33,14 @@ class SileroWyomingHandler(AsyncEventHandler):
                     languages=["ru"]
                 ))
             
-            info = Info(tts=[TtsProgram(voices=voices)])
+            info = Info(tts=[TtsProgram(
+                name="Silero",
+                attribution=attribution,
+                installed=True,
+                description="Silero TTS API Server",
+                version="1.0",
+                voices=voices
+            )])
             await self.write_event(info.event())
             return True
 
