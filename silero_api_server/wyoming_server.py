@@ -27,9 +27,10 @@ class SileroWyomingHandler(AsyncEventHandler):
                 voices.append(TtsVoice(
                     name=speaker,
                     description=f"Silero speaker {speaker}",
-                    languages=["ru"],
                     attribution=attribution,
-                    installed=True
+                    installed=True,
+                    version="1.0",
+                    languages=["ru"]
                 ))
             
             info = Info(tts=[TtsProgram(voices=voices)])
