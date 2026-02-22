@@ -22,8 +22,8 @@ options:
   -h, --help            show this help message and exit
   -o HOST, --host HOST
   -p PORT, --port PORT
-  -l LANG, --language LANG
-  --show-languages
+  -m MODEL, --model MODEL
+  --show-models
 ```
 
 On first run of server, two operations occur automatically. These may take a minute or two.
@@ -38,12 +38,10 @@ level of repository. Server can then be deployed as a container with `docker run
 # API Docs
 API Docs can be accessed from [http://localhost:8001/docs](http://localhost:8001/docs)
 
-# Voice Samples
-Samples are served statically by the web server at `/samples/{speaker}.wav` or callable from the API from `/tts/sample?speaker={speaker}` endpoint.
-
-# Selecting Language
-Use command-line options or download and set the desired language using `POST /tts/language` with payload `{"id":"languageId"}`  
-List of language ids are available via `GET /tts/language`
+# Default model
+By default, the server uses the `v5_ru.pt` model.
+You can change the model via command-line options or change it at runtime using `POST /tts/model` with payload `{"id":"model_id"}`.
+List of available models is available via `GET /tts/model`.
 
 # Home Assistant Integration
 You can use this server with Home Assistant in two ways:

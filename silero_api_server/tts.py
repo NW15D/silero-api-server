@@ -16,11 +16,11 @@ class SileroTtsService:
     """
     Generate TTS wav files using Silero
     """
-    def __init__(self, sample_path, lang="v5_ru.pt") -> None:
+    def __init__(self, sample_path, model_id="v5_ru.pt") -> None:
         self.sample_text = "Удалена библиотека torchvision (так как для TTS она не требуется, а только скачивает лишние мегабайты)."
         self.sample_path = Path(sample_path)
         self.sessions_path = None
-        self.current_lang = lang
+        self.current_model = model_id
 
         # Silero works fine on CPU, but use CUDA if available
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -41,37 +41,37 @@ class SileroTtsService:
         self.langs = self.list_languages()
 
         # Load model
-        self.load_model(lang)
+        self.load_model(model_id)
 
     def init_sessions_path(self, sessions_path="sessions"):
         self.sessions_path = Path(sessions_path)
         if not self.sessions_path.exists():
             self.sessions_path.mkdir()
     
-    def load_model(self, lang_model="v5_ru.pt"):
+    def load_model(self, model_id="v5_ru.pt"):
         # Download the model. Default to ru.
-        if lang_model not in self.langs:
-            raise Exception(f"{lang_model} not in {list(self.langs.values())}")
+        if model_id not in self.langs:
+            raise Exception(f"{model_id} not in {list(self.langs.keys())}")
         
-        model_url = self.langs[lang_model]
-        self.model_file = Path(lang_model)
+        model_url = self.langs[model_id]
+        self.model_file = Path(model_id)
 
         if not Path.is_file(self.model_file):
-            logger.warning(f"Downloading Silero {lang_model} model...") 
+            logger.warning(f"Downloading Silero {model_id} model...") 
             torch.hub.download_url_to_file(model_url,
                                         self.model_file)  
             logger.info(f"Model download completed.")
         
-        self.current_lang = lang_model
+        self.current_model = model_id
         self.model = torch.package.PackageImporter(self.model_file).load_pickle("tts_models", "model")
         self.model.to(self.device)
 
     def generate(self, speaker, text, session=""):
         # Apply morphology and transliteration for Russian and Ukrainian
         lang_code = None
-        if "_ru" in self.current_lang:
+        if "_ru" in self.current_model:
             lang_code = "ru"
-        elif "_ua" in self.current_lang or "_uk" in self.current_lang:
+        elif "_ua" in self.current_model or "_uk" in self.current_model:
             lang_code = "uk"
             
         if lang_code:

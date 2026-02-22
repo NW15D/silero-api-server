@@ -48,7 +48,7 @@ class SampleText(BaseModel):
 class SessionPayload(BaseModel):
     path: Optional[str]
 
-class Language(BaseModel):
+class ModelSelection(BaseModel):
     id: str
 
 class OpenAI_Speech_Request(BaseModel):
@@ -98,13 +98,13 @@ def init_session(sessionPayload: SessionPayload):
     tts_service.init_sessions_path(sessionPayload.path)
     return Response(f"Session path created at {sessionPayload.path}")
 
-@app.get("/tts/language")
-def get_languages():
+@app.get("/tts/model")
+def get_models():
     return JSONResponse(list(tts_service.langs.keys()),status_code=200)
 
-@app.post("/tts/language")
-def set_language(language: Language):
-    tts_service.load_model(language.id)
+@app.post("/tts/model")
+def set_model(model: ModelSelection):
+    tts_service.load_model(model.id)
     return Response(status_code=200)
 
 @app.post("/v1/audio/speech")
