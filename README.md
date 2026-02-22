@@ -1,7 +1,9 @@
-# A simple FastAPI Server to run Silero TTS
+# A simple FastAPI Server and Wyoming TTS Server (Home Assistant) to run Silero TTS on CUDA orCPU
 Credit goes to the developers of Silero TTS  
 [Silero PyTorch Page](https://pytorch.org/hub/snakers4_silero-models_tts/)  
 [Silero GitHub Page](https://github.com/snakers4/silero-models)
+
+*** Для русского языка используется морфинг числительных и конвертация латинницы в кирилицу.
 
 ## Installation
 `pip install silero-api-server`
