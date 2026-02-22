@@ -214,14 +214,55 @@ class MorphProcessor:
         return words
 
     def first(self, integer: int) -> bool:
-        return (integer % 10 == 1) and (integer % 100 != 11)
+        return (abs(integer) % 10 == 1) and (abs(integer) % 100 != 11)
 
     def preprocess_text(self, text: str) -> str:
-        # Find [float/int] [space] [Russian/Ukrainian word]
-        pattern = re.compile(r'(\d+[.,]\d+|\d+)\s+([а-яА-ЯёЁіІїЇєЄґҐ]+)')
+        # 1. Handle temperatures (e.g., -5 °C, +10°, 25.5°C)
+        # Supports Latin C/C, Cyrillic С/с, and F/f
+        temp_pattern = re.compile(r'([+-]?\d+[.,]\d+|[+-]?\d+)\s*(°)\s*([CcСсFf]?)')
+        
+        def replace_temp(match):
+            val_str = match.group(1)
+            plus_prefix = ("плюс " if self.lang == "ru" else "плюс ") if val_str.startswith("+") else ""
+            val_str = val_str.replace("+", "").replace(",", ".")
+            unit = match.group(3).upper()
+            if unit == 'С': unit = 'C' # Normalize Cyrillic С to Latin C
+            
+            if "." in val_str:
+                parts = val_str.split(".")
+                integer = int(parts[0])
+                decimal = int(parts[1])
+                decsize = len(parts[1])
+                num_words = self.float_to_words(integer, decimal, decsize)
+                # Agreement for floats is always genitive singular ("градуса")
+                agree_num = 2 
+            else:
+                integer = int(val_str)
+                num_words = self.integer_to_words(integer)
+                agree_num = integer
+            
+            noun = "градус"
+            morphed_noun = self.words_after_number(agree_num, noun)
+            
+            res = plus_prefix + " ".join(num_words + morphed_noun)
+            
+            if unit == 'C':
+                res += " цельсия" if self.lang == "ru" else " цельсія"
+            elif unit == 'F':
+                res += " фаренгейта"
+                
+            return res
+
+        text = temp_pattern.sub(replace_temp, text)
+
+        # 2. Find [float/int] [space] [Russian/Ukrainian word]
+        # Supports signs (+/-)
+        pattern = re.compile(r'([+-]?\d+[.,]\d+|[+-]?\d+)\s+([а-яА-ЯёЁіІїЇєЄґҐ]+)')
         
         def replace_match(match):
-            val_str = match.group(1).replace(",", ".")
+            val_str = match.group(1)
+            plus_prefix = "плюс " if val_str.startswith("+") else ""
+            val_str = val_str.replace("+", "").replace(",", ".")
             noun = match.group(2)
             
             if "." in val_str:
@@ -236,7 +277,7 @@ class MorphProcessor:
                 num_words = self.integer_to_words(number, noun)
                 morphed_noun = self.words_after_number(number, noun)
             
-            return " ".join(num_words + morphed_noun)
+            return plus_prefix + " ".join(num_words + morphed_noun)
         
         text = pattern.sub(replace_match, text)
         text = translit(text, self.lang)
