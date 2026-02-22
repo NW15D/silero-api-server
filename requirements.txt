@@ -14,3 +14,4 @@ requests
 pymorphy3
 pymorphy3-dicts-ru
 wyoming
+transliterate

@@ -2,6 +2,7 @@ import re
 from typing import List, Union, Optional
 from pymorphy3 import MorphAnalyzer
 from pymorphy3.analyzer import Parse
+from transliterate import translit
 
 NUMBERS = """0,ноль,нулевой
 1,один,первый
@@ -175,7 +176,13 @@ class MorphNumber:
             
             return " ".join(num_words + morphed_noun)
         
-        return pattern.sub(replace_match, text)
+        text = pattern.sub(replace_match, text)
+
+        # Transliterate Latin to Cyrillic
+        # This helps Silero RU models read English words or names if they are written in Latin
+        text = translit(text, 'ru')
+        
+        return text
 
 # Global instance
 MORPH_PROCESSOR = MorphNumber()
