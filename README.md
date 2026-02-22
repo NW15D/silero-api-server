@@ -11,6 +11,14 @@ Credit goes to the developers of Silero TTS
 ## Installation
 `pip install silero-api-server`
 
+OR
+
+`git clone https://github.com/NW15D/silero-api-server.git`
+`cd silero-api-server` 
+`pip install -v -e . --extra-index-url https://download.pytorch.org/whl/cu126`
+`python -m silero_api_server --wyoming-port 10200`
+
+
 ## Starting Server
 **Python <= 3.12 is required.**
 `python -m silero_api_server` will run on default ip and port (0.0.0.0:8001)
