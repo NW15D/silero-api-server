@@ -255,6 +255,49 @@ class MorphProcessor:
 
         text = temp_pattern.sub(replace_temp, text)
 
+        # 3. Handle percentages (e.g., 24.3%, 50 %)
+        percent_pattern = re.compile(r'([+-]?\d+[.,]\d+|[+-]?\d+)\s*(%)')
+        
+        def replace_percent(match):
+            val_str = match.group(1).replace("+", "").replace(",", ".")
+            plus_prefix = "плюс " if match.group(1).startswith("+") else ""
+            minus_prefix = ("мінус " if self.lang == "uk" else "минус ") if match.group(1).startswith("-") else ""
+            val_str = val_str.replace("-", "")
+            
+            if "." in val_str:
+                parts = val_str.split(".")
+                integer = int(parts[0])
+                decimal = int(parts[1])
+                decsize = len(parts[1])
+                
+                int_words = self.integer_to_words(integer)
+                # For decimals, it's feminine: "одна десятая", "две десятых"
+                dec_words = self.integer_to_words(decimal, "часть") 
+                
+                if decsize == 1:
+                    suffix = "десятая" if self.first(decimal) else "десятых"
+                    if self.lang == "uk": suffix = "десята" if self.first(decimal) else "десятих"
+                elif decsize == 2:
+                    suffix = "сотая" if self.first(decimal) else "сотых"
+                    if self.lang == "uk": suffix = "сота" if self.first(decimal) else "сотих"
+                else:
+                    suffix = "тысячная" if self.first(decimal) else "тысячных"
+                    if self.lang == "uk": suffix = "тисячна" if self.first(decimal) else "тисячних"
+                
+                morphed_noun = "процента" if self.lang == "ru" else "відсотка"
+                
+                i_word = " і " if self.lang == "uk" else " и "
+                res = plus_prefix + minus_prefix + " ".join(int_words) + i_word + " ".join(dec_words) + " " + suffix + " " + morphed_noun
+                return res
+            else:
+                number = int(val_str)
+                num_words = self.integer_to_words(number)
+                noun = "процент" if self.lang == "ru" else "відсоток"
+                morphed_noun = self.words_after_number(number, noun)
+                return plus_prefix + minus_prefix + " ".join(num_words + morphed_noun)
+
+        text = percent_pattern.sub(replace_percent, text)
+
         # 2. Find [float/int] [space] [Russian/Ukrainian word]
         # Supports signs (+/-)
         pattern = re.compile(r'([+-]?\d+[.,]\d+|[+-]?\d+)\s+([а-яА-ЯёЁіІїЇєЄґҐ]+)')
