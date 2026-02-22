@@ -51,6 +51,13 @@ class SessionPayload(BaseModel):
 class Language(BaseModel):
     id: str
 
+class OpenAI_Speech_Request(BaseModel):
+    model: Optional[str] = "tts-1"
+    input: str
+    voice: Optional[str] = "baya"
+    response_format: Optional[str] = "mp3"
+    speed: Optional[float] = 1.0
+
 @app.get("/tts/speakers")
 def speakers(request: Request):
     voices = [
@@ -99,6 +106,17 @@ def get_languages():
 def set_language(language: Language):
     tts_service.load_model(language.id)
     return Response(status_code=200)
+
+@app.post("/v1/audio/speech")
+def openai_speech(request: OpenAI_Speech_Request):
+    # Clean ellipses
+    text = request.input.replace("*","")
+    try:
+        audio = tts_service.generate(request.voice, text)
+        return FileResponse(audio)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=f"Generation failed: {e}")
 
 if __name__ == "__main__":
     uvicorn.run(app,host="0.0.0.0",port=8001)

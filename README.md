@@ -40,3 +40,27 @@ Samples are served statically by the web server at `/samples/{speaker}.wav` or c
 # Selecting Language
 Use command-line options or download and set the desired language using `POST /tts/language` with payload `{"id":"languageId"}`  
 List of language ids are available via `GET /tts/language`
+
+# Home Assistant Integration
+You can use this server with Home Assistant in two ways:
+
+## 1. Wyoming Protocol (Recommended for Voice Assistant)
+The server supports the Wyoming protocol, which allows it to work seamlessly with Home Assistant's local voice control.
+To start the server with Wyoming support on port `10200`:
+`python -m silero_api_server --wyoming-port 10200`
+Then, in Home Assistant, add the **Wyoming Protocol** integration and point it to your server's IP and port `10200`.
+
+## 2. Native TTS Component
+A base implementation for a native Home Assistant TTS platform is provided in `ha_tts.py`. You can use this as a reference to create a `custom_component`.
+
+# OpenAI-Compatible API
+The server provides an OpenAI-compatible speech endpoint at `/v1/audio/speech`.
+Example:
+```bash
+curl http://localhost:8001/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Привет, мир!",
+    "voice": "baya"
+  }' --output output.wav
+```

@@ -10,6 +10,7 @@ from loguru import logger
 from pydub import AudioSegment
 from pathlib import Path
 import json
+from silero_api_server.morph_utils import apply_morphology
 
 class SileroTtsService:
     """
@@ -19,6 +20,7 @@ class SileroTtsService:
         self.sample_text = "Удалена библиотека torchvision (так как для TTS она не требуется, а только скачивает лишние мегабайты)."
         self.sample_path = Path(sample_path)
         self.sessions_path = None
+        self.current_lang = lang
 
         # Silero works fine on CPU, but use CUDA if available
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -60,10 +62,17 @@ class SileroTtsService:
                                         self.model_file)  
             logger.info(f"Model download completed.")
         
+        self.current_lang = lang_model
         self.model = torch.package.PackageImporter(self.model_file).load_pickle("tts_models", "model")
         self.model.to(self.device)
 
     def generate(self, speaker, text, session=""):
+        # Apply Russian morphology preprocessing if requested and language is Russian
+        if "_ru" in self.current_lang:
+            logger.debug(f"Applying Russian morphology to: {text}")
+            text = apply_morphology(text)
+            logger.debug(f"Morphed text: {text}")
+
         if len(text) > self.max_char_length:
             # Handle long text input
             text_chunks = self.split_text(text)
@@ -107,7 +116,7 @@ class SileroTtsService:
 
     def save_session_audio(self, audio_path:Path, session:Path, speaker):
         if not self.sessions_path:
-            raise Exception("Session not initialized. Call /tts/init_session with {'path':'desired\session\path'}")
+            raise Exception(r"Session not initialized. Call /tts/init_session with {'path':'desired\session\path'}")
         session_path = self.sessions_path.joinpath(session)
         if not session_path.exists():
             session_path.mkdir()

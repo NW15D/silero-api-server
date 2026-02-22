@@ -20,14 +20,17 @@ dependencies = [
   "loguru",
   "pydantic",
   "python-dotenv",
-  "torch",
-  "torchaudio",
+  "torch==2.7.1+cu126",
+  "torchaudio==2.7.1+cu126",
   "uvicorn",
   "soundfile",
   "numpy",
   "scipy",
   "pydub",
   "requests",
+  "pymorphy3",
+  "pymorphy3-dicts-ru",
+  "wyoming",
 ]
 dynamic=["version"]
 
