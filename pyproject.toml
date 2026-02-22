@@ -1,14 +1,16 @@
 [build-system]
-requires = ["hatchling","hatch-vcs"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "silero-api-server"
 authors = [
-  { name="Ouoertheo", email="ouoertheo@tomeofjamin.net" },
+  { name="NW15D", email="[EMAIL_ADDRESS]" },
 ]
 description = "A simple FastAPI server to host Silero TTS"
 readme = "README.md"
+license = "MIT"
+version = "1.0.0"
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -34,14 +36,10 @@ dependencies = [
   "wyoming",
   "transliterate",
 ]
-dynamic=["version"]
 
 [project.urls]
-"Homepage" = "https://github.com/ouoertheo/silero-api-server"
-"Bug Tracker" = "https://github.com/ouoertheo/silero-api-server/issues"
-
-[tool.hatch.version]
-source = "vcs"
+"Homepage" = "https://github.com/NW15D/silero-api-server"
+"Bug Tracker" = "https://github.com/NW15D/silero-api-server/issues"
 
 [tool.hatch.build.targets.wheel]
 only-include = ["silero_api_server"]
