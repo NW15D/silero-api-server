@@ -1,16 +1,18 @@
 # API Server and Wyoming (Home Assistant) to run Silero TTS on CUDA or CPU
+Fast as real on GPU , only 550MB VRAM required
+*** Для русского и украинского языка используется морфинг числительных и конвертация латинницы в кирилицу. Для украинского не тестировалось
+
+
+
 Credit goes to the developers of Silero TTS  
 [Silero PyTorch Page](https://pytorch.org/hub/snakers4_silero-models_tts/)  
 [Silero GitHub Page](https://github.com/snakers4/silero-models)
-
-*** Для русского и украинского языка используется морфинг числительных и конвертация латинницы в кирилицу. Для украинского не тестировалось
-
 
 ## Installation
 `pip install silero-api-server`
 
 ## Starting Server
-**Python 3.12+ is required.**
+**Python <= 3.12 is required.**
 `python -m silero_api_server` will run on default ip and port (0.0.0.0:8001)
 
 ```
