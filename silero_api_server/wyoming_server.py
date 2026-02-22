@@ -6,7 +6,7 @@ from typing import Optional
 from wyoming.audio import AudioStart, AudioChunk, AudioStop
 from wyoming.event import Event
 from wyoming.info import Describe, Info, TtsVoice, TtsProgram, Attribution
-from wyoming.server import AsyncServer, AsyncEventHandler
+from wyoming.server import AsyncTcpServer, AsyncEventHandler
 from wyoming.tts import Synthesize
 
 from silero_api_server.tts import SileroTtsService
@@ -64,18 +64,18 @@ class SileroWyomingHandler(AsyncEventHandler):
 
         return True
 
-class SileroWyomingServer(AsyncServer):
+class SileroWyomingServer(AsyncTcpServer):
     def __init__(self, host: str, port: int, tts_service: SileroTtsService):
         super().__init__(host, port)
         self.tts_service = tts_service
 
-    def create_handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    def create_handler(self, reader, writer):
         return SileroWyomingHandler(self.tts_service, reader, writer)
 
 async def run_wyoming_server(host: str, port: int, tts_service: SileroTtsService):
     server = SileroWyomingServer(host, port, tts_service)
     _LOGGER.info(f"Wyoming server started on {host}:{port}")
-    await server.run()
+    await server.run(server.create_handler)
 
 if __name__ == "__main__":
     import argparse
